@@ -16,34 +16,13 @@ def load_customer_data(file_path):
     with open(file_path, 'r') as f:
         return json.load(f)
 
-def generate_quote():
+def generate_quote_from_data(customer_data):
     """
-    Orchestrates the quote generation process.
-    1. Reads customer data.
-    2. Queries Weaviate for relevant services.
-    3. Uses Gemini to generate a structured quote.
+    Generates a quote based on the provided customer data.
+    Returns the quote as a dictionary.
     """
-    print("Starting Quote Generation Process...")
-    
-    # 1. Load Customer Data
-    # Note: User mentioned "Customer now only has one json file". 
-    # We'll look for the first JSON file in the directory to be robust.
-    customer_dir = os.path.join("data", "customer")
-    customer_file = None
-    if os.path.exists(customer_dir):
-        for f in os.listdir(customer_dir):
-            if f.endswith(".json"):
-                customer_file = os.path.join(customer_dir, f)
-                break
-    
-    if not customer_file:
-        print(f"No customer JSON file found in {customer_dir}")
-        return
-
-    customer_data = load_customer_data(customer_file)
-    print(f"Loaded customer data for: {customer_data.get('customer_name')}")
-    
     issue_description = customer_data.get("issue")
+    print(f"Processing quote for: {customer_data.get('customer_name')}")
     print(f"Issue: {issue_description}")
     
     # 2. Query Weaviate
@@ -104,7 +83,7 @@ def generate_quote():
                     print(f"- {m.name}")
         except Exception as list_error:
             print(f"Could not list models: {list_error}")
-        return
+        raise e
 
     try:
         # Clean up response if it contains markdown code blocks
@@ -115,6 +94,38 @@ def generate_quote():
             text = text[:-3]
             
         quote_json = json.loads(text)
+        return quote_json
+        
+    except Exception as e:
+        print(f"Error parsing Gemini response: {e}")
+        print(f"Raw response: {response.text}")
+        raise e
+
+def main():
+    """
+    CLI entry point. Reads from file and saves to file.
+    """
+    print("Starting Quote Generation Process (CLI)...")
+    
+    # 1. Load Customer Data
+    customer_dir = os.path.join("data", "customer")
+    customer_file = None
+    if os.path.exists(customer_dir):
+        for f in os.listdir(customer_dir):
+            if f.endswith(".json"):
+                customer_file = os.path.join(customer_dir, f)
+                break
+    
+    if not customer_file:
+        print(f"No customer JSON file found in {customer_dir}")
+        return
+
+    customer_data = load_customer_data(customer_file)
+    print(f"Loaded customer data for: {customer_data.get('customer_name')}")
+    
+    try:
+        quote_json = generate_quote_from_data(customer_data)
+        
         print("\n--- GENERATED QUOTE ---\n")
         print(json.dumps(quote_json, indent=2))
         
@@ -125,8 +136,7 @@ def generate_quote():
         print(f"\nQuote saved to {output_file}")
         
     except Exception as e:
-        print(f"Error parsing Gemini response: {e}")
-        print(f"Raw response: {response.text}")
+        print(f"Failed to generate quote: {e}")
 
 if __name__ == "__main__":
-    generate_quote()
+    main()

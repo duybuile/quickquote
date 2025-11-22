@@ -5,3 +5,5 @@ dlt
 python-dotenv
 google-generativeai
 sentence-transformers
+uvicorn
+fastapi
