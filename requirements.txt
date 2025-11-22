@@ -1,0 +1,7 @@
+weaviate-client
+livekit
+elevenlabs
+dlt
+python-dotenv
+google-generativeai
+sentence-transformers
